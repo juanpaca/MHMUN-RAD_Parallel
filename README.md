@@ -13,7 +13,7 @@ MPI-parallel copy of the optimized polytopal MHM-RAD solver.
 ff-mpirun -np 4 MHM-RAD_parallel.edp -cM 1 -edgeM 0 -subM 0 -EkO 1 -PkO 3 -stab 1 -verboseinK 0
 ```
 
-Default meshes are read from `../MHM_polytopal/meshes_lshape_cM<N>/`. Override with `-meshDir <path>`.
+Default meshes are read from `../meshes_lshape_cM<N>/`. Override with `-meshDir <path>`. The meshes are generated with the python scripts.
 
 ## Parallelization
 
