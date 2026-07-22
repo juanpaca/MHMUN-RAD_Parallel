@@ -1,0 +1,79 @@
+// MHM on Polygonal Macro Elements
+// Supports general polytopal tilings: quads, L-shaped, triangles.
+// Meshes: FreeFem++ native (.msb) or GMSH MSH 2.2 (.msh, use -gmsh 1).
+// Auto-detects nEdgesPerEl from boundary labels; override via -nEdges N.
+// Generators: preprocess_lshape.py (L-shaped, native), preprocess_quad.py (quads, GMSH).
+
+include "getARGV.idp"
+include "ExtractDofsonBorder.idp"
+load "Element_P3"
+load "Element_PkEdge"
+load "iovtk"
+load "qf11to25"
+load "Element_Mixte"
+load "gmsh"
+load "msh3"
+
+verbosity = 0;
+
+int mpiRank = mpirank;
+int mpiSize = mpisize;
+
+func int CountPositive(int[int] arr, int n){
+    int pcount = 0;
+    for(int i =0;i<n;i++){
+        if (arr[i]>=0) pcount++;
+    }
+    return pcount;
+}
+
+func int duplicateElement (int[int] arr, int num){
+    if (num <= 1) return num;
+    int[int] temp(num);
+    int j = 0;
+    for (int i = 0; i < num - 1; i++){
+        if (arr(i) != arr(i + 1)) temp(j++) = arr(i);
+    }
+    temp(j++) = arr(num - 1);
+    for (int i = 0; i < j; i++) arr(i) = temp(i);
+    return j;
+}
+
+macro grad(u) [dx(u), dy(u)] //
+macro laplacian(u) (dxx(u) + dyy(u)) //
+macro alpha(a1,a2) [a1, a2] //
+
+
+int coarseMesh = getARGV("-cM", 0);
+int edgeMesh = getARGV("-edgeM", 0);
+int subMesh = getARGV("-subM", 0);
+int EkOrder = getARGV("-EkO", 1);
+int PkOrder = getARGV("-PkO", 3);
+bool verboseinK = getARGV("-verboseinK", 1);
+bool exportVTKlocal = getARGV("-vtk", 0);
+bool localStabinK = getARGV("-stab", 0);
+string meshDir = "../MHM_polytopal/meshes_tri_cM" + coarseMesh + "/";
+for(int i=1; i<ARGV.n; i++){
+    if(ARGV[i] == "-meshDir" && i+1 < ARGV.n) meshDir = ARGV[i+1];
+}
+int nEdgesPerEl = getARGV("-nEdges", 0);   // 0 = auto-detect from boundary labels
+int labelBase = getARGV("-labelBase", 100);
+
+
+if(EkOrder == 0 && PkOrder == 2){
+    // Actual L0K2 spaces: edge P0, volume P2.
+    func Pm = P0;
+    func Pk = P2;
+    include "MHM-RAD_parallel_body.idp"
+}
+else if(EkOrder == 1 && PkOrder == 3){
+    // Actual L1K3 spaces: edge P1dc, volume P3.
+    func Pm = P1dc;
+    func Pk = P3;
+    include "MHM-RAD_parallel_body.idp"
+}
+else{
+    cout << "ERROR: unsupported polynomial pair -EkO " << EkOrder << " -PkO " << PkOrder << endl;
+    cout << "Supported pairs are -EkO 0 -PkO 2 and -EkO 1 -PkO 3." << endl;
+    exit(1);
+}
