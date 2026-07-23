@@ -23,7 +23,7 @@ Default meshes are read from `../meshes_lshape_cM<N>/`. Override with `-meshDir 
 - Local Schur triplets are gathered to rank 0.
 - Offline reconstruction arrays are reduced so rank 0 can solve and postprocess exactly as the serial reference.
 
-## Validation Against `MHM-RAD_poly_opt.edp`
+## Validation Against The MHM (non-parallel) code
 
 Representative L-shaped mesh results matched the current optimized serial solver:
 
